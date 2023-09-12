@@ -437,6 +437,10 @@ if(NOT ${VELOX_BUILD_MINIMAL})
   include_directories(${Protobuf_INCLUDE_DIRS})
 endif()
 
+set_source(cctz)
+resolve_dependency(cctz)
+include_directories(${cctz_INCLUDE_DIRS})
+
 # GCC needs to link a library to enable std::filesystem.
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
   set(FILESYSTEM "stdc++fs")

@@ -23,6 +23,8 @@
 #include "velox/type/TimestampConversion.h"
 #include "velox/type/Type.h"
 #include "velox/type/tz/TimeZoneMap.h"
+#include "cctz/civil_time.h"
+#include "cctz/time_zone.h"
 
 namespace facebook::velox::functions {
 
@@ -292,7 +294,8 @@ struct MonthFunction : public InitSessionTimezone<T>,
   FOLLY_ALWAYS_INLINE void call(
       int64_t& result,
       const arg_type<Timestamp>& timestamp) {
-    result = getMonth(getDateTime(timestamp, this->timeZone_));
+    // result = getMonth(getDateTime(timestamp, this->timeZone_));
+    result = 79;
   }
 
   FOLLY_ALWAYS_INLINE void call(int64_t& result, const arg_type<Date>& date) {
@@ -1309,6 +1312,100 @@ struct TimeZoneMinuteFunction : public TimestampWithTimezoneSupport<T> {
     // Get offset in seconds with GMT and convert to minute
     auto offset = this->getGMTOffsetSec(input);
     result = (offset / 60) % 60;
+  }
+};
+
+template <typename T>
+struct ToISO8601Function : public TimestampWithTimezoneSupport<T> {
+  VELOX_DEFINE_FUNCTION_TYPES(T);
+
+  std::string dateToISOstringHelper(int32_t date) {
+    // conversion of days-since-epoch to civil date follows
+    // algorithm here: http://howardhinnant.github.io/date_algorithms.html
+
+    auto z = date;
+    z += 719468;
+    const int era = (z >= 0 ? z : z - 146096) / 146097;
+    const unsigned doe = static_cast<unsigned>(z - era * 146097); // [0, 146096]
+    const unsigned yoe =
+        (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365; // [0, 399]
+    int y = static_cast<int>(yoe) + era * 400;
+    const unsigned doy = doe - (365 * yoe + yoe / 4 - yoe / 100); // [0, 365]
+    const unsigned mp = (5 * doy + 2) / 153; // [0, 11]
+    const unsigned d = doy - (153 * mp + 2) / 5 + 1; // [1, 31]
+    const unsigned m = mp + (mp < 10 ? 3 : -9);
+    y += (m <= 2);
+
+    // ISO 8601: "2011-10-05T14:48:00.000Z"
+    auto yStr = std::to_string(y);
+    auto mStr = (m < 10) ? "0" + std::to_string(m) : std::to_string(m);
+    auto dStr = (m < 10) ? "0" + std::to_string(d) : std::to_string(d);
+    return (yStr + "-" + mStr + "-" + dStr + "X" + "00:00:00.000");
+  }
+
+  FOLLY_ALWAYS_INLINE void call(
+      out_type<Varchar>& result,
+      const arg_type<Date>& date) {
+    auto isoStr = dateToISOstringHelper(date);
+    result.resize(isoStr.size());
+    result = isoStr;
+  }
+
+  FOLLY_ALWAYS_INLINE void call(
+      out_type<Varchar>& result,
+      const arg_type<Timestamp>& timestamp) {
+    // timestamp.toString() returns in format
+    // "1919-11-28T00:00:00.000000000"
+    // truncate nanosecond precision for ISO 8601 string
+
+    cctz::time_zone lax;
+    load_time_zone("America/Los_Angeles", &lax);
+
+    // Converts the input civil time in LAX to an absolute time.
+    const auto moon_walk =
+      cctz::convert(cctz::civil_second(2001, 8, 22, 3, 4, 5), lax);
+
+    result = cctz::format("%Y-%m-%d %H:%M:%S %Ez\n", moon_walk, lax);
+
+    // result = timestamp.toString().substr(0, 23);
+    // result.resize(23);
+  }
+
+  FOLLY_ALWAYS_INLINE void call(
+      out_type<Varchar>& result,
+      const arg_type<TimestampWithTimezone>& timestampWithTimezone) {
+    const auto milliseconds = *timestampWithTimezone.template at<0>();
+    Timestamp timestamp = Timestamp::fromMillis(milliseconds);
+    auto tsStr = timestamp.toString().substr(0, 23);
+
+    // Get the given timezone name
+    auto timezone =
+        util::getTimeZoneName(*timestampWithTimezone.template at<1>());
+
+    // Some processing required if alphabetical timezone name was input,
+    // as ISO8601 output should contain timezone as UTC offset
+    if (isalpha(timezone[0])) {
+      // Get offset in seconds with GMT and convert to hour & minute
+      auto offset = this->getGMTOffsetSec(timestampWithTimezone);
+
+      auto tzHour = offset / 3600;
+      auto tzMin = (offset / 60) % 60;
+      std::string tzHourStr;
+
+      if (tzHour < 10) {
+        tzHourStr = "0" + std::to_string(abs(tzHour));
+      }
+
+      if (tzHour < 0) {
+        tzHourStr = "-" + tzHourStr;
+      } else {
+        tzHourStr = "+" + tzHourStr;
+      }
+
+      result = tsStr + tzHourStr + ":" + std::to_string(tzMin) + "0";
+    } else {
+      result = tsStr + timezone;
+    }
   }
 };
 

@@ -39,7 +39,9 @@ endif()
 
 target_link_libraries(
   velox_functions_spark velox_functions_lib velox_functions_prestosql_impl
-  velox_is_null_functions velox_functions_util Folly::folly)
+  velox_is_null_functions velox_functions_util cctz Folly::folly)
+
+# set_target_properties(tests PROPERTIES EXCLUDE_FROM_ALL True)
 
 set_property(TARGET velox_functions_spark PROPERTY JOB_POOL_COMPILE
                                                    high_memory_pool)
