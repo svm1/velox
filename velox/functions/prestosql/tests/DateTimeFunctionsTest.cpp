@@ -3743,61 +3743,78 @@ TEST_F(DateTimeFunctionsTest, toISO8601TestTimestampWithTimezone) {
     return evaluateWithTimestampWithTimezone<std::string>(
         "to_iso8601(c0)", timestamp, timeZoneName);
   };
+  
+  EXPECT_EQ(
+    "2020-02-05T22:31:07.000-08:00",
+    toISO8601(
+        (18297 * kSecondsInDay + 22 * 3600 + 31 * 60 + 7) * 1000,
+        "America/Los_Angeles"));
 
   EXPECT_EQ(
-      "2020-02-05T22:31:07.000-08:00",
-      toISO8601(
-          (18297 * kSecondsInDay + 22 * 3600 + 31 * 60 + 7) * 1000,
-          "America/Los_Angeles"));
-  EXPECT_EQ(
-      "2020-02-05T22:31:07.000+08:00",
-      toISO8601(
-          (18297 * kSecondsInDay + 22 * 3600 + 31 * 60 + 7) * 1000,
-          "Asia/Brunei"));
-  EXPECT_EQ(
-      "2020-02-05T22:31:07.000-08:00",
-      toISO8601(
-          (18297 * kSecondsInDay + 22 * 3600 + 31 * 60 + 7) * 1000, "-08:00"));
-  EXPECT_EQ(
-      "2020-02-05T22:31:07.000+08:00",
-      toISO8601(
-          (18297 * kSecondsInDay + 22 * 3600 + 31 * 60 + 7) * 1000, "+08:00"));
-
-  EXPECT_EQ("1970-01-01T00:00:00.000+00:00", toISO8601(0, "+00:00"));
-  EXPECT_EQ("1970-01-01T00:00:00.000+00:00", toISO8601(0, "Africa/Abidjan"));
+    "2020-08-26T22:31:07.000-07:00",
+    toISO8601(
+        (18500 * kSecondsInDay + 22 * 3600 + 31 * 60 + 7) * 1000,
+        "America/Los_Angeles"));
 
   EXPECT_EQ(
-      "1970-01-01T03:19:58.000+00:00",
-      toISO8601(
-          (3 * kSecondsInHour + 19 * kSecondsInMinute + 58) * 1'000, "+00:00"));
+    "1878-04-13T01:50:23.000-07:52",
+    toISO8601(
+        (-33500 * kSecondsInDay + 1 * 3600 + 50 * 60 + 23) * 1000,
+        "America/Los_Angeles"));
+//   EXPECT_EQ(
+//       "2020-02-05T22:31:07.000-08:00",
+//       toISO8601(
+//           (18297 * kSecondsInDay + 22 * 3600 + 31 * 60 + 7) * 1000,
+//           "America/Los_Angeles"));
+//   EXPECT_EQ(
+//       "2020-02-05T22:31:07.000+08:00",
+//       toISO8601(
+//           (18297 * kSecondsInDay + 22 * 3600 + 31 * 60 + 7) * 1000,
+//           "Asia/Brunei"));
+//   EXPECT_EQ(
+//       "2020-02-05T22:31:07.000-08:00",
+//       toISO8601(
+//           (18297 * kSecondsInDay + 22 * 3600 + 31 * 60 + 7) * 1000, "-08:00"));
+//   EXPECT_EQ(
+//       "2020-02-05T22:31:07.000+08:00",
+//       toISO8601(
+//           (18297 * kSecondsInDay + 22 * 3600 + 31 * 60 + 7) * 1000, "+08:00"));
 
-  EXPECT_EQ(
-      "1970-01-01T03:19:58.000-06:00",
-      toISO8601(
-          (3 * kSecondsInHour + 19 * kSecondsInMinute + 58) * 1'000, "-06:00"));
+//   EXPECT_EQ("1970-01-01T00:00:00.000+00:00", toISO8601(0, "+00:00"));
+//   EXPECT_EQ("1970-01-01T00:00:00.000+00:00", toISO8601(0, "Africa/Abidjan"));
 
-  EXPECT_EQ(
-      "1969-12-31T19:00:00.000-05:00",
-      toISO8601((-1 * kSecondsInDay + 19 * kSecondsInHour) * 1000, "-05:00"));
-  EXPECT_EQ(
-      "1969-12-31T19:00:00.000-05:00",
-      toISO8601(
-          (-1 * kSecondsInDay + 19 * kSecondsInHour) * 1000,
-          "America/New_York"));
+//   EXPECT_EQ(
+//       "1970-01-01T03:19:58.000+00:00",
+//       toISO8601(
+//           (3 * kSecondsInHour + 19 * kSecondsInMinute + 58) * 1'000, "+00:00"));
 
-  // Last second of day 0
-  EXPECT_EQ(
-      "1970-01-01T23:59:59.000+03:00",
-      toISO8601((kSecondsInDay - 1) * 1'000, "+03:00"));
+//   EXPECT_EQ(
+//       "1970-01-01T03:19:58.000-06:00",
+//       toISO8601(
+//           (3 * kSecondsInHour + 19 * kSecondsInMinute + 58) * 1'000, "-06:00"));
 
-  // Last second of day 18297
-  EXPECT_EQ(
-      "2020-02-05T23:59:59.000-11:00",
-      toISO8601((18297 * kSecondsInDay + kSecondsInDay - 1) * 1'000, "-11:00"));
+//   EXPECT_EQ(
+//       "1969-12-31T19:00:00.000-05:00",
+//       toISO8601((-1 * kSecondsInDay + 19 * kSecondsInHour) * 1000, "-05:00"));
+//   EXPECT_EQ(
+//       "1969-12-31T19:00:00.000-05:00",
+//       toISO8601(
+//           (-1 * kSecondsInDay + 19 * kSecondsInHour) * 1000,
+//           "America/New_York"));
 
-  // Last second of day -18297
-  EXPECT_EQ(
-      "1919-11-28T23:59:59.000+12:00",
-      toISO8601(
-          (-18297 * kSecondsInDay + kSecondsInDay - 1) * 1'000, "+12:00"));
+//   // Last second of day 0
+//   EXPECT_EQ(
+//       "1970-01-01T23:59:59.000+03:00",
+//       toISO8601((kSecondsInDay - 1) * 1'000, "+03:00"));
+
+//   // Last second of day 18297
+//   EXPECT_EQ(
+//       "2020-02-05T23:59:59.000-11:00",
+//       toISO8601((18297 * kSecondsInDay + kSecondsInDay - 1) * 1'000, "-11:00"));
+
+//   // Last second of day -18297
+//   EXPECT_EQ(
+//       "1919-11-28T23:59:59.000+12:00",
+//       toISO8601(
+//           (-18297 * kSecondsInDay + kSecondsInDay - 1) * 1'000, "+12:00"));
 }

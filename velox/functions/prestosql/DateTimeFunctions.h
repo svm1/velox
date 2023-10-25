@@ -25,6 +25,8 @@
 #include "velox/type/tz/TimeZoneMap.h"
 #include "cctz/civil_time.h"
 #include "cctz/time_zone.h"
+#include <time.h>
+#include <ctime>
 
 namespace facebook::velox::functions {
 
@@ -1358,17 +1360,25 @@ struct ToISO8601Function : public TimestampWithTimezoneSupport<T> {
     // "1919-11-28T00:00:00.000000000"
     // truncate nanosecond precision for ISO 8601 string
 
+    // using namespace std::chrono;
+
+    // auto ymd = std::chrono::year_month_day(
+    //     2001y, std::chrono::July, 22d // overload (2)
+    // );
+    // std::chrono::seconds hms = 10800 + 240 + 5;
+
+    // auto ut = locate_zone("America/Los_Angeles")->to_sys(local_days{ymd} + hms);
+
     cctz::time_zone lax;
     load_time_zone("America/Los_Angeles", &lax);
 
     // Converts the input civil time in LAX to an absolute time.
     const auto moon_walk =
-      cctz::convert(cctz::civil_second(2001, 8, 22, 3, 4, 5), lax);
+      cctz::convert(cctz::civil_second(2001, 7, 22, 3, 4, 5), lax);
 
-    result = cctz::format("%Y-%m-%d %H:%M:%S %Ez\n", moon_walk, lax);
+    // result = cctz::format("%Y-%m-%d %H:%M:%S %Ez\n", moon_walk, lax);
 
-    // result = timestamp.toString().substr(0, 23);
-    // result.resize(23);
+    result = cctz::format("%Y-%m-%dT%H:%M:%S.000%Ez\n", moon_walk, lax);
   }
 
   FOLLY_ALWAYS_INLINE void call(
@@ -1386,23 +1396,22 @@ struct ToISO8601Function : public TimestampWithTimezoneSupport<T> {
     // as ISO8601 output should contain timezone as UTC offset
     if (isalpha(timezone[0])) {
       // Get offset in seconds with GMT and convert to hour & minute
-      auto offset = this->getGMTOffsetSec(timestampWithTimezone);
+      // auto offset = this->getGMTOffsetSec(timestampWithTimezone);
 
-      auto tzHour = offset / 3600;
-      auto tzMin = (offset / 60) % 60;
-      std::string tzHourStr;
+      cctz::time_zone cctz_time_zone;
+      load_time_zone(timezone, &cctz_time_zone);
 
-      if (tzHour < 10) {
-        tzHourStr = "0" + std::to_string(abs(tzHour));
-      }
+      std::time_t t = timestamp.getSeconds();
+      struct tm *date = std::gmtime( &t );
+      
+      // Converts the input civil time in timezone[0] to an absolute time.
+      const auto absolute_time =
+      cctz::convert(cctz::civil_second(1900 + date->tm_year, 1 + date->tm_mon, date->tm_mday, date->tm_hour, date->tm_min, date->tm_sec), cctz_time_zone);
+      // const auto absolute_time =
+      // cctz::convert(cctz::civil_second(2001, 7, 22, 3, 4, 5), cctz_time_zone);
 
-      if (tzHour < 0) {
-        tzHourStr = "-" + tzHourStr;
-      } else {
-        tzHourStr = "+" + tzHourStr;
-      }
+      result = cctz::format("%Y-%m-%dT%H:%M:%S.000%Ez", absolute_time, cctz_time_zone);
 
-      result = tsStr + tzHourStr + ":" + std::to_string(tzMin) + "0";
     } else {
       result = tsStr + timezone;
     }

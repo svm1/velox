@@ -32,6 +32,8 @@ set(BUILD_EXAMPLES OFF CACHE BOOL "Build libfoo shared library" FORCE)
 set(BUILD_BENCHMARK OFF CACHE BOOL "Build libfoo shared library" FORCE)
 set(BUILD_TESTING OFF CACHE BOOL "Build libfoo shared library" FORCE)
 
+FetchContent_MakeAvailable(cctz)
+
 # if(NOT cctz_POPULATED)
 #   set(CMAKE_CXX_FLAGS_BKP "${CMAKE_CXX_FLAGS}")
 
@@ -52,8 +54,6 @@ set(BUILD_TESTING OFF CACHE BOOL "Build libfoo shared library" FORCE)
 #     # Currently reproduced on Ubuntu 22.04 with clang 14
 #     string(APPEND CMAKE_CXX_FLAGS " -Wno-error")
 #   endif()
-
-  FetchContent_MakeAvailable(cctz)
 
 #   # Fetch the content using previously declared details
 #   FetchContent_Populate(cctz)
