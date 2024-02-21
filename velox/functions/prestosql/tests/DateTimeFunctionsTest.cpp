@@ -2535,6 +2535,27 @@ TEST_F(DateTimeFunctionsTest, dateDiffTimestampWithTimezone) {
       dateDiff("year", 0, "+00:00", 1'598'373'010'123, "America/Los_Angeles"));
 }
 
+TEST_F(DateTimeFunctionsTest, parseControl) {
+    EXPECT_EQ(
+      TimestampWithTimezone(169260000, util::getTimeZoneID("+00:00")),
+      parseDatetime("1970-01-02+23:01 GMT", "YYYY-MM-dd+HH:mm z"));
+}
+
+TEST_F(DateTimeFunctionsTest, parseTest) {
+//   evaluate<RowVector>(
+//       "parse_datetime(c0, 'yyyy-MM-dd+HH:00:99 ZZZ')",
+//       makeRowVector({makeNullableFlatVector<StringView>(
+//           {StringView{"2024-01-14+17:00:99 UTC"}})}));
+
+    // EXPECT_EQ(
+    //   TimestampWithTimezone(118860000, util::getTimeZoneID("+00:00")),
+    //   parseDatetime("1970-01-02+09:01+00:00", "YYYY-MM-dd+HH:mmZZ"));
+
+    EXPECT_EQ(TimestampWithTimezone(1705251600000, util::getTimeZoneID("+00:00")), 
+      parseDatetime("2024-01-14+17:00:99 UTC", "yyyy-MM-dd+HH:00:99 ZZZ"));
+    
+}
+
 TEST_F(DateTimeFunctionsTest, parseDatetime) {
   // Check null behavior.
   EXPECT_EQ(std::nullopt, parseDatetime("1970-01-01", std::nullopt));
@@ -2550,7 +2571,7 @@ TEST_F(DateTimeFunctionsTest, parseDatetime) {
   // Simple tests. More exhaustive tests are provided as part of Joda's
   // implementation.
   EXPECT_EQ(
-      TimestampWithTimezone(0, 0), parseDatetime("1970-01-01", "YYYY-MM-dd"));
+      TimestampWithTimezone(0, 0), parseDatetime("1979-01-01", "YYYY-MM-dd"));
   EXPECT_EQ(
       TimestampWithTimezone(86400000, 0),
       parseDatetime("1970-01-02", "YYYY-MM-dd"));
