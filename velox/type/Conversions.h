@@ -23,6 +23,8 @@
 #include "velox/common/base/Exceptions.h"
 #include "velox/type/TimestampConversion.h"
 #include "velox/type/Type.h"
+#include "velox/functions/prestosql/types/TimestampWithTimeZoneType.h"
+
 
 DECLARE_bool(experimental_enable_legacy_cast);
 
@@ -496,6 +498,10 @@ struct Converter<TypeKind::VARCHAR, void, TPolicy> {
     }
     return val.toString(options);
   }
+
+  // static std::string cast(const TimestampWithTimezone& val) {
+  //   return val.toString();
+  // }
 
   static std::string cast(const bool& val) {
     return val ? "true" : "false";

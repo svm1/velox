@@ -105,6 +105,40 @@ void castFromTimestampWithTimeZone(
   auto flatResult = result.as<FlatVector<Timestamp>>();
   castToTimestamp(*inputVector, context, rows, *flatResult);
 }
+
+// template <TypeKind kind>
+// void castFromTimestampWithTimeZone(
+//     const BaseVector& input,
+//     exec::EvalCtx& context,
+//     const SelectivityVector& rows,
+//     BaseVector& result) {
+//   VELOX_CHECK_EQ(kind, TypeKind::VARCHAR)
+
+//   const auto inputVector = input.as<RowVector>();
+//   auto flatResult = result.as<FlatVector<Varchar>>();
+//   castToTimestamp(*inputVector, context, rows, *flatResult);
+
+//   const auto& config = context.execCtx()->queryCtx()->queryConfig();
+//   const auto adjustTimestampToTimezone = config.adjustTimestampToTimezone();
+//   const auto timestampVector =
+//       inputVector.childAt(0)->as<SimpleVector<int64_t>>();
+//   const auto timezoneVector =
+//       inputVector.childAt(1)->as<SimpleVector<int16_t>>();
+
+//   context.applyToSelectedNoThrow(rows, [&](auto row) {
+//     if (inputVector.isNullAt(row)) {
+//       flatResult.setNull(row, true);
+//     } else {
+//       Timestamp ts = Timestamp::fromMillis(timestampVector->valueAt(row));
+//       if (!adjustTimestampToTimezone) {
+//         // Convert UTC to the given time zone.
+//         ts.toTimezone(timezoneVector->valueAt(row));
+//       }
+//       auto tsTzStr = ts.toString() + timezoneVector->valueAt(row);
+//       flatResult.set(row, tsTzStr);
+//     }
+//   });
+// }
 } // namespace
 
 bool TimestampWithTimeZoneCastOperator::isSupportedFromType(

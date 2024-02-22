@@ -644,6 +644,17 @@ TEST_F(CastExprTest, timestampToString) {
       });
 }
 
+// TEST_F(CastExprTest, timestampWithTimezoneToString) {
+//   testCast<TimestampWithTimeZone, std::string>(
+//       "string",
+//       {
+//           TimestampWithTimezone(946729316, 0),
+//       },
+//       {
+//           "1940-01-02 00:00:00.000",
+//       });
+// }
+
 TEST_F(CastExprTest, dateToTimestamp) {
   testCast<int32_t, Timestamp>(
       "timestamp",
