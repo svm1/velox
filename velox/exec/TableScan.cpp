@@ -61,15 +61,10 @@ bool TableScan::shouldYield(StopReason taskStopReason, size_t startTimeMs)
     const {
   // Checks task-level yield signal, driver-level yield signal and table scan
   // output processing time limit.
-  //
-  // NOTE: if the task is being paused, then we shall continue execution as we
-  // won't yield the driver thread but simply spinning (with on-thread time
-  // sleep) until the task has been resumed.
-  return (taskStopReason == StopReason::kYield ||
-          driverCtx_->driver->shouldYield() ||
-          ((getOutputTimeLimitMs_ != 0) &&
-           (getCurrentTimeMs() - startTimeMs) >= getOutputTimeLimitMs_)) &&
-      !driverCtx_->task->pauseRequested();
+  return taskStopReason == StopReason::kYield ||
+      driverCtx_->driver->shouldYield() ||
+      ((getOutputTimeLimitMs_ != 0) &&
+       (getCurrentTimeMs() - startTimeMs) >= getOutputTimeLimitMs_);
 }
 
 bool TableScan::shouldStop(StopReason taskStopReason) const {
@@ -78,7 +73,6 @@ bool TableScan::shouldStop(StopReason taskStopReason) const {
 }
 
 RowVectorPtr TableScan::getOutput() {
-  SuspendedSection suspendedSection(driverCtx_->driver);
   auto exitCurStatusGuard = folly::makeGuard([this]() { curStatus_ = ""; });
 
   if (noMoreSplits_) {
@@ -128,10 +122,6 @@ RowVectorPtr TableScan::getOutput() {
           const auto connectorStats = dataSource_->runtimeStats();
           auto lockedStats = stats_.wlock();
           for (const auto& [name, counter] : connectorStats) {
-            if (name == "ioWaitNanos") {
-              ioWaitNanos_ += counter.value - lastIoWaitNanos_;
-              lastIoWaitNanos_ = counter.value;
-            }
             if (FOLLY_UNLIKELY(lockedStats->runtimeStats.count(name) == 0)) {
               lockedStats->runtimeStats.emplace(
                   name, RuntimeMetric(counter.unit));
@@ -200,7 +190,13 @@ RowVectorPtr TableScan::getOutput() {
         dataSource_->setFromDataSource(std::move(preparedDataSource));
       } else {
         curStatus_ = "getOutput: adding split";
+        const auto addSplitStartMicros = getCurrentTimeMicro();
         dataSource_->addSplit(connectorSplit);
+        stats_.wlock()->addRuntimeStat(
+            "dataSourceAddSplitWallNanos",
+            RuntimeCounter(
+                (getCurrentTimeMicro() - addSplitStartMicros) * 1'000,
+                RuntimeCounter::Unit::kNanos));
       }
       curStatus_ = "getOutput: updating stats_.numSplits";
       ++stats_.wlock()->numSplits;
@@ -239,10 +235,10 @@ RowVectorPtr TableScan::getOutput() {
     checkPreload();
 
     {
-      curStatus_ = "getOutput: updating stats_.dataSourceWallNanos";
+      curStatus_ = "getOutput: updating stats_.dataSourceReadWallNanos";
       auto lockedStats = stats_.wlock();
       lockedStats->addRuntimeStat(
-          "dataSourceWallNanos",
+          "dataSourceReadWallNanos",
           RuntimeCounter(
               (getCurrentTimeMicro() - ioTimeStartMicros) * 1'000,
               RuntimeCounter::Unit::kNanos));
@@ -346,8 +342,7 @@ void TableScan::checkPreload() {
            this](const std::shared_ptr<connector::ConnectorSplit>& split) {
             preload(split);
 
-            executor->add([taskHolder = operatorCtx_->task(),
-                           connectorSplit = split]() mutable {
+            executor->add([connectorSplit = split]() mutable {
               connectorSplit->dataSource->prepare();
               connectorSplit.reset();
             });
