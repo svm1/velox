@@ -671,7 +671,10 @@ uint32_t HiveDataSink::appendWriter(const HiveWriterId& id) {
   auto parquetVersion =
       hiveConfig_->parquetWriterVersion(connectorSessionProperties);
 
-  if (parquetVersion == "V1") {
+  // this conditional is not hitting
+  // parquetVersion = "PARQUET_1_0" yet conditional is failing
+  auto eq = (parquetVersion == "PARQUET_1_0");
+  if (parquetVersion == "PARQUET_1_0") {
     options.parquetVersion = dwio::common::ParquetDataPageVersion::V1;
   } else {
     options.parquetVersion = dwio::common::ParquetDataPageVersion::V2;
