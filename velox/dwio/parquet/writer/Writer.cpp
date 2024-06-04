@@ -144,7 +144,7 @@ std::shared_ptr<WriterProperties> getArrowParquetWriterOptions(
       static_cast<int64_t>(flushPolicy->rowsInRowGroup()));
   properties = properties->codec_options(options.codecOptions);
   properties = properties->enable_store_decimal_as_integer();
-  properties = properties->version(options.parquetVersion);
+  properties = properties->data_page_version(options.parquetVersion);
   return properties->build();
 }
 
@@ -397,10 +397,12 @@ parquet::WriterOptions getParquetOptions(
   }
 
   // Default Parquet file format version is 2.6.
-  if (options.parquetVersion == dwio::common::ParquetVersion::PARQUET_1_0) {
-    parquetOptions.parquetVersion = arrow::ParquetVersion::PARQUET_1_0;
+  // dwio::common maps to Options.h, duplicate enum I added
+  // arrow::ParquetVersion maps to Properties.h, existing arrow vendor property
+  if (options.parquetVersion == dwio::common::ParquetDataPageVersion::V1) {
+    parquetOptions.parquetVersion = arrow::ParquetDataPageVersion::V1;
   } else {
-    parquetOptions.parquetVersion = arrow::ParquetVersion::PARQUET_2_6;
+    parquetOptions.parquetVersion = arrow::ParquetDataPageVersion::V2;
   }
 
   return parquetOptions;

@@ -275,8 +275,8 @@ class HiveConfig {
   /// through Arrow bridge. 0: second, 3: milli, 6: micro, 9: nano.
   uint8_t parquetWriteTimestampUnit(const Config* session) const;
 
-  /// Returns the file format version used by the Parquet writer.
-  /// Default version is 2.6; 1.0 can be specified via session property or Hive
+  /// Returns the datapage version used by the Parquet writer.
+  /// Default version is V2; V1 can be specified via session property or Hive
   /// config.
   std::string parquetWriterVersion(const Config* session) const;
 

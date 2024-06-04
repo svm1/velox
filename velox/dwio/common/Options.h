@@ -603,7 +603,7 @@ class ReaderOptions : public io::ReaderOptions {
   }
 };
 
-enum class ParquetVersion { PARQUET_1_0, PARQUET_2_6 };
+enum class ParquetDataPageVersion { V1, V2 };
 
 struct WriterOptions {
   TypePtr schema;
@@ -615,7 +615,7 @@ struct WriterOptions {
   std::optional<uint64_t> maxDictionaryMemory{std::nullopt};
   std::map<std::string, std::string> serdeParameters;
   std::optional<uint8_t> parquetWriteTimestampUnit;
-  ParquetVersion parquetVersion;
+  ParquetDataPageVersion parquetVersion;
 };
 
 } // namespace facebook::velox::dwio::common

@@ -235,7 +235,7 @@ uint8_t HiveConfig::parquetWriteTimestampUnit(const Config* session) const {
 std::string HiveConfig::parquetWriterVersion(const Config* session) const {
   const auto parquetVersion = session->get<std::string>(
       kParquetWriterVersion,
-      config_->get<std::string>(kParquetWriterVersion, "PARQUET_2_6"));
+      config_->get<std::string>(kParquetWriterVersion, "V2"));
   // VELOX_CHECK(
   //     parquetVersion == "PARQUET_1_0" || parquetVersion == "PARQUET_2_6",
   //     "Invalid Parquet version.");

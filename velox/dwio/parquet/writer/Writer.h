@@ -98,10 +98,10 @@ struct WriterOptions {
   common::CompressionKind compression = common::CompressionKind_NONE;
   arrow::Encoding::type encoding = arrow::Encoding::PLAIN;
   velox::memory::MemoryPool* memoryPool;
-  // Default Parquet file format version is 2.6 - can be set to 1.0 via session
+  // Default Parquet datapage version is V2 - can be set to V1 via session
   // property.
-  arrow::ParquetVersion::type parquetVersion =
-      arrow::ParquetVersion::PARQUET_2_6;
+  arrow::ParquetDataPageVersion parquetVersion =
+      arrow::ParquetDataPageVersion::V2;
   // The default factory allows the writer to construct the default flush
   // policy with the configs in its ctor.
   std::function<std::unique_ptr<DefaultFlushPolicy>()> flushPolicyFactory;
