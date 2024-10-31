@@ -501,6 +501,45 @@ TEST_F(ProbabilityTest, inverseNormalCDF) {
   VELOX_ASSERT_THROW(inverseNormalCDF(0, 1, 1.00001), "p must be 0 > p > 1");
 }
 
+TEST_F(ProbabilityTest, inversePoissonCDF) {
+  const auto invPoissonCDF = [&](std::optional<double> lambda,
+                                  std::optional<double> p) {
+    return evaluateOnce<double>(
+        "inverse_poisson_cdf(c0, c1)", lambda, p);
+  };
+
+  EXPECT_EQ(0, invPoissonCDF(3, 0));
+  EXPECT_EQ(2, invPoissonCDF(3, 0.3));
+  EXPECT_EQ(6, invPoissonCDF(3, 0.95));
+  EXPECT_EQ(17, invPoissonCDF(3, 0.99999999));
+
+  EXPECT_EQ(std::nullopt, invPoissonCDF(std::nullopt, 0));
+  EXPECT_EQ(std::nullopt, invPoissonCDF(3, std::nullopt));
+  EXPECT_EQ(std::nullopt, invPoissonCDF(std::nullopt, std::nullopt));
+
+  // Test invalid inputs for lambda.
+  VELOX_ASSERT_THROW(
+      invPoissonCDF(-3, 0.3), "lambda must be greater than 0");
+  VELOX_ASSERT_THROW(
+      invPoissonCDF(kDoubleMin, 0.3), "lambda must be greater than 0");
+  VELOX_ASSERT_THROW(
+      invPoissonCDF(kNan, 0.3), "lambda must be greater than 0");
+
+  // Test invalid inputs for p.
+  VELOX_ASSERT_THROW(
+      invPoissonCDF(3, -0.1), "p must be in the interval [0, 1)");
+  VELOX_ASSERT_THROW(
+      invPoissonCDF(3, 1.1), "p must be in the interval [0, 1)");
+  VELOX_ASSERT_THROW(
+      invPoissonCDF(3, 1), "p must be in the interval [0, 1)");
+
+  // Test invalid inputs for both params.
+  VELOX_ASSERT_THROW(
+      invPoissonCDF(-3, 1.1), "lambda must be greater than 0");
+  VELOX_ASSERT_THROW(
+      invPoissonCDF(3, 1.1), "p must be in the interval [0, 1)");
+}
+
 TEST_F(ProbabilityTest, inverseWeibullCDF) {
   const auto inverseWeibullCDF = [&](std::optional<double> a,
                                      std::optional<double> b,

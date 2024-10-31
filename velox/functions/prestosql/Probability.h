@@ -266,6 +266,21 @@ struct InverseNormalCDFFunction {
 };
 
 template <typename T>
+struct InversePoissonCDFFunction {
+  VELOX_DEFINE_FUNCTION_TYPES(T);
+
+  FOLLY_ALWAYS_INLINE void call(double& result, double lambda, double p) {
+    VELOX_USER_CHECK(
+        (p >= 0) && (p < 1),
+        "p must be in the interval [0, 1)");
+    VELOX_USER_CHECK_GT(lambda, 0, "lambda must be greater than 0");
+
+    boost::math::poisson_distribution<double> poisson(lambda);
+    result = boost::math::quantile(poisson, p);
+  }
+};
+
+template <typename T>
 struct InverseWeibullCDFFunction {
   VELOX_DEFINE_FUNCTION_TYPES(T);
 
