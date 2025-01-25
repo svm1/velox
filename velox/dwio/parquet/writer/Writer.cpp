@@ -147,6 +147,8 @@ std::shared_ptr<WriterProperties> getArrowParquetWriterOptions(
       static_cast<int64_t>(flushPolicy->rowsInRowGroup()));
   properties = properties->codec_options(options.codecOptions);
   properties = properties->enable_store_decimal_as_integer();
+  properties = properties->data_page_version(options.parquetDataPageVersion.value());
+
   return properties->build();
 }
 
@@ -234,6 +236,21 @@ std::optional<std::string> getTimestampTimeZone(
     const char* configKey) {
   if (const auto timezone = config.get<std::string>(configKey)) {
     return timezone.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<arrow::ParquetDataPageVersion> getParquetDataPageVersion(
+    const config::ConfigBase& config,
+    const char* configKey) {
+  if (const auto version = config.get<std::string>(configKey)) {
+    if (version == "PARQUET_1_0") {
+      return arrow::ParquetDataPageVersion::V1;
+    } else if (version == "PARQUET_2_0") {
+      return arrow::ParquetDataPageVersion::V2;
+    } else {
+      VELOX_FAIL("Unsupported parquet datapage version {}", version.value());
+    }
   }
   return std::nullopt;
 }
@@ -469,6 +486,13 @@ void WriterOptions::processConfigs(
         ? getTimestampTimeZone(session, core::QueryConfig::kSessionTimezone)
         : getTimestampTimeZone(
               connectorConfig, core::QueryConfig::kSessionTimezone);
+  }
+
+  if (!parquetDataPageVersion) {
+    parquetDataPageVersion = 
+      getParquetDataPageVersion(session, kParquetSessionDataPageVersion).has_value()
+      ? getParquetDataPageVersion(session, kParquetSessionDataPageVersion)
+      : getParquetDataPageVersion(connectorConfig, kParquetSessionDataPageVersion);
   }
 }
 
