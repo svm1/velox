@@ -147,7 +147,9 @@ std::shared_ptr<WriterProperties> getArrowParquetWriterOptions(
       static_cast<int64_t>(flushPolicy->rowsInRowGroup()));
   properties = properties->codec_options(options.codecOptions);
   properties = properties->enable_store_decimal_as_integer();
-  properties = properties->data_page_version(options.parquetDataPageVersion.value());
+  properties =
+      properties->data_page_version(options.parquetDataPageVersion.value_or(
+          arrow::ParquetDataPageVersion::V1));
 
   return properties->build();
 }
@@ -489,10 +491,12 @@ void WriterOptions::processConfigs(
   }
 
   if (!parquetDataPageVersion) {
-    parquetDataPageVersion = 
-      getParquetDataPageVersion(session, kParquetSessionDataPageVersion).has_value()
-      ? getParquetDataPageVersion(session, kParquetSessionDataPageVersion)
-      : getParquetDataPageVersion(connectorConfig, kParquetSessionDataPageVersion);
+    parquetDataPageVersion =
+        getParquetDataPageVersion(session, kParquetSessionDataPageVersion)
+            .has_value()
+        ? getParquetDataPageVersion(session, kParquetSessionDataPageVersion)
+        : getParquetDataPageVersion(
+              connectorConfig, kParquetHiveConnectorDataPageVersion);
   }
 }
 

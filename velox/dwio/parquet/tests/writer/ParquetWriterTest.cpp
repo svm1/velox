@@ -24,8 +24,8 @@
 #include "velox/dwio/parquet/RegisterParquetWriter.h" // @manual
 #include "velox/dwio/parquet/reader/PageReader.h"
 #include "velox/dwio/parquet/tests/ParquetTestBase.h"
-#include "velox/exec/Cursor.h"
 #include "velox/dwio/parquet/writer/arrow/Properties.h"
+#include "velox/exec/Cursor.h"
 #include "velox/exec/tests/utils/AssertQueryBuilder.h"
 #include "velox/exec/tests/utils/PlanBuilder.h"
 #include "velox/exec/tests/utils/QueryAssertions.h"
@@ -79,9 +79,9 @@ class ParquetWriterTest : public ParquetTestBase {
         opts);
   };
 
-  facebook::velox::parquet::thrift::PageType::type getDataPageVersion(
+  parquet::thrift::PageType::type getDataPageVersion(
       const dwio::common::MemorySink* sinkPtr,
-      const facebook::velox::parquet::ColumnChunkMetaDataPtr& colChunkPtr) {
+      const parquet::ColumnChunkMetaDataPtr& colChunkPtr) {
     std::string_view sinkData(sinkPtr->data(), sinkPtr->size());
     auto readFile = std::make_shared<InMemoryReadFile>(sinkData);
     auto file = std::make_shared<ReadFileInputStream>(std::move(readFile));
@@ -178,18 +178,17 @@ TEST_F(ParquetWriterTest, datapageVersion) {
   // Set parquet datapage version and write data - then read to ensure the
   // property took effect.
   const auto testDataPageVersion =
-      [&](facebook::velox::parquet::arrow::ParquetDataPageVersion
-              dataPageVersion) {
+      [&](parquet::arrow::ParquetDataPageVersion dataPageVersion) {
         // Create an in-memory writer.
         auto sink = std::make_unique<MemorySink>(
             200 * 1024 * 1024,
             dwio::common::FileSink::Options{.pool = leafPool_.get()});
         auto sinkPtr = sink.get();
-        facebook::velox::parquet::WriterOptions writerOptions;
+        parquet::WriterOptions writerOptions;
         writerOptions.memoryPool = leafPool_.get();
         writerOptions.parquetDataPageVersion = dataPageVersion;
 
-        auto writer = std::make_unique<facebook::velox::parquet::Writer>(
+        auto writer = std::make_unique<parquet::Writer>(
             std::move(sink), writerOptions, rootPool_, schema);
         writer->write(data);
         writer->close();
@@ -202,13 +201,11 @@ TEST_F(ParquetWriterTest, datapageVersion) {
       };
 
   ASSERT_EQ(
-      testDataPageVersion(
-          facebook::velox::parquet::arrow::ParquetDataPageVersion::V1),
+      testDataPageVersion(parquet::arrow::ParquetDataPageVersion::V1),
       thrift::PageType::type::DATA_PAGE);
 
   ASSERT_EQ(
-      testDataPageVersion(
-          facebook::velox::parquet::arrow::ParquetDataPageVersion::V2),
+      testDataPageVersion(parquet::arrow::ParquetDataPageVersion::V2),
       thrift::PageType::type::DATA_PAGE_V2);
 };
 

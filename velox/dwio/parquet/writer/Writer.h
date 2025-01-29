@@ -121,6 +121,8 @@ struct WriterOptions : public dwio::common::WriterOptions {
       "hive.parquet.writer.timestamp-unit";
   static constexpr const char* kParquetSessionDataPageVersion =
       "parquet_writer_version";
+  static constexpr const char* kParquetHiveConnectorDataPageVersion =
+      "hive.parquet.writer.version";
 
   // Process hive connector and session configs.
   void processConfigs(
